@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Team {
+  id           String   @id // e.g., "PHI", "KC"
+  name         String   // e.g., "Philadelphia Eagles"
+  abbreviation String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  defenseSnapshots TeamDefenseSnapshot[]
+  qbPerformances   QBPerformance[]       @relation("OpponentPerformances")
+}
+
+model QB {
+  id           String   @id @default(cuid())
+  gsis_id      String   @unique // NFL's official ID
+  name         String
+  headshot_url String?
+  team_id      String?
+  isNotable    Boolean  @default(false) // >= 50 pass attempts
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  performances QBPerformance[]
+}
+
+model QBPerformance {
+  id          String @id @default(cuid())
+  qb_id       String
+  season      Int
+  week        Int
+  opponent_id String
+
+  // Core Stats
+  pass_yards    Int
+  pass_tds      Int
+  pass_attempts Int
+  completions   Int
+  rush_yards    Int
+  rush_tds      Int
+  interceptions Int
+  sacks         Int
+  fumbles       Int
+
+  // Pre-calculated Context (The "Magic" for Sorting)
+  opp_win_pct        Float // Opponent W/L % at the time of game
+  opp_pass_def_rank  Int   // Opponent Pass Yds Allowed rank at time of game (1-32)
+  opp_total_def_rank Int   // Opponent Total Yds Allowed rank at time of game
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  qb       QB   @relation(fields: [qb_id], references: [id])
+  opponent Team @relation("OpponentPerformances", fields: [opponent_id], references: [id])
+
+  @@unique([qb_id, season, week])
+  @@index([season, week])
+  @@index([opponent_id])
+}
+
+model TeamDefenseSnapshot {
+  id      String @id @default(cuid())
+  team_id String
+  season  Int
+  week    Int // Snapshot as of end of this week
+
+  // Cumulative Stats
+  pass_yards_allowed  Int
+  rush_yards_allowed  Int
+  total_yards_allowed Int
+  points_allowed      Int
+  wins                Int
+  losses              Int
+  ties                Int
+
+  // Rankings (1-32, lower is better defense)
+  pass_def_rank  Int
+  rush_def_rank  Int
+  total_def_rank Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team Team @relation(fields: [team_id], references: [id])
+
+  @@unique([team_id, season, week])
+  @@index([season, week])
+}
