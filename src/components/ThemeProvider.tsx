@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 
 type Theme = "light" | "dark" | "system";
 
@@ -12,17 +12,27 @@ type ThemeContextType = {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+// Helper to get initial theme from localStorage (client-side only)
+function getInitialTheme(): Theme {
+  if (typeof window === "undefined") return "system";
+  const stored = localStorage.getItem("theme") as Theme | null;
+  return stored || "system";
+}
+
+// Helper to get initial resolved theme
+function getInitialResolvedTheme(): "light" | "dark" {
+  if (typeof window === "undefined") return "light";
+  const stored = localStorage.getItem("theme") as Theme | null;
+  if (stored && stored !== "system") return stored as "light" | "dark";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("system");
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+  // Use lazy initialization to avoid useEffect setState
+  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(getInitialResolvedTheme);
 
-  useEffect(() => {
-    const stored = localStorage.getItem("theme") as Theme | null;
-    if (stored) {
-      setTheme(stored);
-    }
-  }, []);
-
+  // Apply theme to DOM and handle system preference changes
   useEffect(() => {
     const root = document.documentElement;
 
@@ -46,15 +56,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [theme]);
 
-  const handleSetTheme = (newTheme: Theme) => {
-    setTheme(newTheme);
+  const setTheme = useCallback((newTheme: Theme) => {
+    setThemeState(newTheme);
     localStorage.setItem("theme", newTheme);
-  };
+  }, []);
 
   return (
-    <ThemeContext.Provider
-      value={{ theme, setTheme: handleSetTheme, resolvedTheme }}
-    >
+    <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
       {children}
     </ThemeContext.Provider>
   );

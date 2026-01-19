@@ -6,6 +6,9 @@ import { StatSelector } from "./StatSelector";
 import { TimeframeFilter } from "./TimeframeFilter";
 import { SortControls } from "./SortControls";
 import { PerformanceChart } from "./PerformanceChart";
+import { GameLogTable } from "./GameLogTable";
+import { SeasonAverages } from "./SeasonAverages";
+import { GameComparisonModal } from "./GameComparisonModal";
 import {
   getSortedPerformances,
   sortChronologically,
@@ -27,6 +30,7 @@ export function QBProfileClient({ qb }: QBProfileClientProps) {
   const [selectedStat, setSelectedStat] = useState<StatType>("pass_yards");
   const [timeframe, setTimeframe] = useState<TimeframeType>("season");
   const [sortMetric, setSortMetric] = useState<SortMetricType>("chronological");
+  const [comparisonGame, setComparisonGame] = useState<Performance | null>(null);
 
   // Compute filtered performances based on timeframe
   const filteredPerformances = useMemo(() => {
@@ -67,6 +71,22 @@ export function QBProfileClient({ qb }: QBProfileClientProps) {
     return { totals, averages };
   }, [filteredPerformances]);
 
+  // Get timeframe label for display
+  const timeframeLabel = useMemo(() => {
+    switch (timeframe) {
+      case "last5":
+        return "Last 5 Games";
+      case "last10":
+        return "Last 10 Games";
+      case "season":
+        return "Season";
+      case "all":
+        return "Career";
+      default:
+        return "Season";
+    }
+  }, [timeframe]);
+
   return (
     <div className="space-y-6">
       <QBHeader
@@ -90,9 +110,42 @@ export function QBProfileClient({ qb }: QBProfileClientProps) {
             performances={sortedPerformances}
             selectedStat={selectedStat}
             sortMetric={sortMetric}
+            onDataPointClick={setComparisonGame}
           />
         </div>
       </div>
+
+      {/* Season Averages */}
+      <div className="card">
+        <SeasonAverages
+          performances={filteredPerformances}
+          timeframeLabel={timeframeLabel}
+        />
+      </div>
+
+      {/* Game Log Table */}
+      <div className="card">
+        <h3 className="text-lg font-bold text-foreground mb-4">Game Log</h3>
+        <GameLogTable
+          performances={sortedPerformances}
+          selectedStat={selectedStat}
+          sortMetric={sortMetric}
+          onSortChange={setSortMetric}
+        />
+      </div>
+
+      {/* Comparison Modal */}
+      {comparisonGame && (
+        <GameComparisonModal
+          isOpen={!!comparisonGame}
+          onClose={() => setComparisonGame(null)}
+          season={comparisonGame.season}
+          opponentId={comparisonGame.opponent_id}
+          opponentName={comparisonGame.opponent.name}
+          currentQBId={qb.gsis_id}
+          selectedStat={selectedStat}
+        />
+      )}
     </div>
   );
 }

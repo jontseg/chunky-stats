@@ -1,4 +1,6 @@
+import { memo } from "react";
 import Link from "next/link";
+import { Headshot } from "./ui";
 
 type QBCardProps = {
   gsis_id: string;
@@ -12,7 +14,7 @@ type QBCardProps = {
   };
 };
 
-export function QBCard({
+function QBCardComponent({
   gsis_id,
   name,
   headshot_url,
@@ -23,36 +25,13 @@ export function QBCard({
     <Link href={`/qb/${gsis_id}`} className="block">
       <div className="card card-hover cursor-pointer">
         <div className="flex items-center gap-4">
-          <div className="relative h-16 w-16 flex-shrink-0">
-            {headshot_url ? (
-              <img
-                src={headshot_url}
-                alt={name}
-                className="h-full w-full rounded-full object-cover bg-card-bg"
-              />
-            ) : (
-              <div className="h-full w-full rounded-full bg-primary/10 flex items-center justify-center">
-                <svg
-                  className="h-8 w-8 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-              </div>
-            )}
-            {team_id && (
-              <div className="absolute -bottom-1 -right-1 rounded-full bg-background px-1.5 py-0.5 text-xs font-semibold border border-card-border">
-                {team_id}
-              </div>
-            )}
-          </div>
+          <Headshot
+            url={headshot_url}
+            name={name}
+            size="lg"
+            showTeamBadge
+            teamId={team_id}
+          />
 
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-lg truncate">{name}</h3>
@@ -82,7 +61,7 @@ export function QBCard({
           </div>
 
           <svg
-            className="h-5 w-5 text-muted flex-shrink-0"
+            className="h-5 w-5 text-muted shrink-0"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -99,3 +78,5 @@ export function QBCard({
     </Link>
   );
 }
+
+export const QBCard = memo(QBCardComponent);

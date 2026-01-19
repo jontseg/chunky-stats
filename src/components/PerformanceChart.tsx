@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useCallback, memo } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -11,106 +12,73 @@ import {
   CartesianGrid,
 } from "recharts";
 import type { Performance, StatType, SortMetricType } from "@/lib/types";
+import { STAT_CONFIG } from "@/lib/utils/statHighlight";
+import { ChartTooltip } from "./chart/ChartTooltip";
+import { EmptyState } from "./ui";
 
 type PerformanceChartProps = {
   performances: Performance[];
   selectedStat: StatType;
   sortMetric: SortMetricType;
+  onDataPointClick?: (performance: Performance) => void;
 };
 
-const STAT_CONFIG: Record<StatType, { label: string; color: string }> = {
-  pass_yards: { label: "Pass Yards", color: "#3b82f6" },
-  pass_tds: { label: "Pass TDs", color: "#22c55e" },
-  rush_yards: { label: "Rush Yards", color: "#a855f7" },
-  rush_tds: { label: "Rush TDs", color: "#f97316" },
-  interceptions: { label: "INTs", color: "#ef4444" },
-};
-
-function getDefenseRankLabel(rank: number): string {
-  if (rank <= 5) return "Elite";
-  if (rank <= 10) return "Good";
-  if (rank <= 20) return "Average";
-  if (rank <= 27) return "Below Avg";
-  return "Weak";
-}
-
-function getDefenseRankColor(rank: number): string {
-  if (rank <= 5) return "#ef4444";
-  if (rank <= 10) return "#f97316";
-  if (rank <= 20) return "#eab308";
-  if (rank <= 27) return "#22c55e";
-  return "#16a34a";
-}
-
-type TooltipProps = {
-  active?: boolean;
-  payload?: Array<{
-    dataKey: string;
-    payload: Performance & { label: string };
-  }>;
-};
-
-function CustomTooltip({ active, payload }: TooltipProps) {
-  if (!active || !payload || !payload.length) return null;
-
-  const data = payload[0].payload;
-  const statKey = payload[0].dataKey as StatType;
-  const statConfig = STAT_CONFIG[statKey];
-  const statValue = data[statKey];
-
-  return (
-    <div className="card p-3 shadow-lg border border-card-border text-sm">
-      <div className="font-semibold mb-1">
-        Week {data.week} vs {data.opponent.abbreviation}
-      </div>
-      <div className="text-2xl font-bold mb-2" style={{ color: statConfig.color }}>
-        {statValue.toLocaleString()} {statConfig.label}
-      </div>
-      <div className="space-y-1 text-muted">
-        <div className="flex items-center gap-2">
-          <span>Pass Def:</span>
-          <span
-            className="font-medium"
-            style={{ color: getDefenseRankColor(data.opp_pass_def_rank) }}
-          >
-            #{data.opp_pass_def_rank} ({getDefenseRankLabel(data.opp_pass_def_rank)})
-          </span>
-        </div>
-        <div>
-          Opp Record: {(data.opp_win_pct * 100).toFixed(0)}% Win
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function PerformanceChart({
+function PerformanceChartComponent({
   performances,
   selectedStat,
   sortMetric,
+  onDataPointClick,
 }: PerformanceChartProps) {
   const config = STAT_CONFIG[selectedStat];
 
+  // Memoize chart data transformation
+  const chartData = useMemo(
+    () =>
+      performances.map((p) => ({
+        ...p,
+        label:
+          sortMetric === "chronological"
+            ? `W${p.week}`
+            : p.opponent.abbreviation,
+      })),
+    [performances, sortMetric]
+  );
+
+  // Memoize brush indices
+  const brushIndices = useMemo(() => {
+    const dataLength = chartData.length;
+    return {
+      start: Math.max(0, dataLength - 10),
+      end: dataLength - 1,
+    };
+  }, [chartData.length]);
+
+  // Memoize click handler
+  const handleChartClick = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (state: any) => {
+      if (!onDataPointClick) return;
+      const index = state?.activeIndex;
+      if (index !== undefined && chartData[index]) {
+        onDataPointClick(chartData[index] as Performance);
+      }
+    },
+    [onDataPointClick, chartData]
+  );
+
   if (performances.length === 0) {
     return (
-      <div className="h-80 flex items-center justify-center text-muted">
-        No performance data available for the selected timeframe.
+      <div className="h-80">
+        <EmptyState
+          message="No performance data available for the selected timeframe."
+          icon="chart"
+        />
       </div>
     );
   }
 
-  // Prepare chart data with X-axis labels
-  const chartData = performances.map((p) => ({
-    ...p,
-    label:
-      sortMetric === "chronological"
-        ? `W${p.week}`
-        : p.opponent.abbreviation,
-  }));
-
-  // Calculate brush indices for default view (last 10 games visible)
-  const dataLength = chartData.length;
-  const brushStartIndex = Math.max(0, dataLength - 10);
+  const showBrush = chartData.length > 10;
+  const isClickable = !!onDataPointClick;
 
   return (
     <div className="h-80">
@@ -118,6 +86,8 @@ export function PerformanceChart({
         <AreaChart
           data={chartData}
           margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+          onClick={isClickable ? handleChartClick : undefined}
+          style={{ cursor: isClickable ? "pointer" : "default" }}
         >
           <defs>
             <linearGradient
@@ -153,7 +123,7 @@ export function PerformanceChart({
             axisLine={false}
           />
 
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<ChartTooltip showClickHint={isClickable} />} />
 
           <Area
             type="monotone"
@@ -162,16 +132,29 @@ export function PerformanceChart({
             strokeWidth={2}
             fill={`url(#gradient-${selectedStat})`}
             animationDuration={300}
+            activeDot={{
+              r: 8,
+              strokeWidth: 2,
+              stroke: config.color,
+              fill: "var(--background)",
+              cursor: isClickable ? "pointer" : "default",
+            }}
+            dot={{
+              r: 4,
+              fill: config.color,
+              strokeWidth: 0,
+              cursor: isClickable ? "pointer" : "default",
+            }}
           />
 
-          {dataLength > 10 && (
+          {showBrush && (
             <Brush
               dataKey="label"
               height={30}
               stroke="var(--primary)"
               fill="var(--card-bg)"
-              startIndex={brushStartIndex}
-              endIndex={dataLength - 1}
+              startIndex={brushIndices.start}
+              endIndex={brushIndices.end}
               tickFormatter={() => ""}
             />
           )}
@@ -180,3 +163,5 @@ export function PerformanceChart({
     </div>
   );
 }
+
+export const PerformanceChart = memo(PerformanceChartComponent);
