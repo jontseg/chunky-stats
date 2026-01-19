@@ -1,0 +1,5 @@
+2026-01-18 11:46:40,500 - INFO - Starting sync at 2026-01-18 11:46:40.500263
+2026-01-18 11:46:40,500 - INFO - Processing seasons: [2025, 2026]
+2026-01-18 11:46:40,880 - INFO - Database connection successful
+2026-01-18 11:46:40,880 - INFO - Fetching weekly data for seasons: [2025, 2026]
+2026-01-18 11:46:41,128 - ERROR - Unexpected error: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)>

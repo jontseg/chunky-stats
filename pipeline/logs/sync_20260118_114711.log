@@ -1,0 +1,5 @@
+2026-01-18 11:47:11,922 - INFO - Starting sync at 2026-01-18 11:47:11.922668
+2026-01-18 11:47:11,922 - INFO - Processing seasons: [2024, 2025]
+2026-01-18 11:47:11,965 - INFO - Database connection successful
+2026-01-18 11:47:11,965 - INFO - Fetching weekly data for seasons: [2024, 2025]
+2026-01-18 11:47:12,587 - ERROR - Unexpected error: HTTP Error 404: Not Found

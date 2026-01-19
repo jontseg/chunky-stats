@@ -1,0 +1,21 @@
+2026-01-18 11:47:25,068 - INFO - Starting sync at 2026-01-18 11:47:25.068631
+2026-01-18 11:47:25,068 - INFO - Processing seasons: [2023, 2024]
+2026-01-18 11:47:25,111 - INFO - Database connection successful
+2026-01-18 11:47:25,111 - INFO - Fetching weekly data for seasons: [2023, 2024]
+2026-01-18 11:47:25,995 - INFO - Fetched 11250 weekly records
+2026-01-18 11:47:25,995 - INFO - Fetching schedules for seasons: [2023, 2024]
+2026-01-18 11:47:26,901 - INFO - Fetched 570 schedule records
+2026-01-18 11:47:26,901 - INFO - Calculating defensive rankings...
+2026-01-18 11:47:26,911 - INFO - Calculated defensive rankings for 1140 team-weeks
+2026-01-18 11:47:26,911 - INFO - Calculating team records...
+2026-01-18 11:47:26,931 - INFO - Calculated records for 1140 team-weeks
+2026-01-18 11:47:26,932 - INFO - Extracting QB performances...
+2026-01-18 11:47:26,934 - INFO - Extracted 1387 QB performances
+2026-01-18 11:47:26,934 - INFO - Identifying notable QBs...
+2026-01-18 11:47:26,935 - INFO - Found 49 notable QBs
+2026-01-18 11:47:26,935 - INFO - Upserting team defense snapshots...
+2026-01-18 11:47:27,355 - INFO - Upserted 1140 team defense snapshots
+2026-01-18 11:47:27,355 - INFO - Upserting QBs and performances...
+2026-01-18 11:47:27,374 - INFO - Upserted 96 QBs
+2026-01-18 11:47:28,027 - INFO - Upserted 1387 QB performances
+2026-01-18 11:47:28,027 - INFO - Sync completed successfully at 2026-01-18 11:47:28.027654
